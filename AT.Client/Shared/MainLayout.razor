@@ -1,0 +1,97 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager navigationManager
+@inject IdentityAuthenticationStateProvider authStateProvider
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using Blazored.Toast
+@using Blazored.Toast.Configuration
+
+<BlazoredToasts Position="ToastPosition.TopRight" 
+Timeout="5" IconType="IconType.FontAwesome" ErrorIcon="fa fa-times"
+InfoIcon="fa fa-info" SuccessIcon="fa fa-check" WarningIcon="fa fa-exclamation" />
+
+@code {
+    private bool isLoggedIn;
+    private string username;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Lấy AuthenticationState
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        // Kiểm tra nếu người dùng đã đăng nhập
+        isLoggedIn = user.Identity.IsAuthenticated;
+
+        if (isLoggedIn)
+        {
+            username = user.Identity.Name; // Lấy tên người dùng
+        }
+    }
+}
+<div class="page">
+    <AuthorizeView>
+        <Authorized>
+            @*Show the menu and the rest of the body*@
+            <div class="sidebar">
+                <NavMenu />
+            </div>
+
+            <main>
+                @* <div class="top-row px-4">
+                    @if (isLoggedIn)
+                    {
+                        <a type="button" class="btn btn-link">Xin chào @username</a>
+                        <b>,</b>
+                        <a type="button" class="btn btn-link" @onclick="@LogoutClick">Logout</a>
+                    } 
+                </div> *@
+
+                <div class="top-row px-4">
+                    @if (isLoggedIn)
+
+                    {
+                        <div class="dropdown">
+                            <a type="button" class="btn btn-link dropdown-toggle bg-green-500" data-bs-toggle="dropdown" aria-expanded="false">
+                                Xin chào, @username
+                            </a>
+                            <ul class="dropdown-menu border-2">
+                                <li>
+                                    <a class="dropdown-item" href="/user-info">User Info</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">Change Password</a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" @onclick="@LogoutClick">Logout</a>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                </div>
+
+
+                <article class="content px-4">
+                    @Body
+                </article>
+            </main>
+        </Authorized>
+        <NotAuthorized>
+            @*Just render the body so that RedirectToLogin works*@
+            @Body
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+
+@code {
+
+    async Task LogoutClick()
+    {
+        await authStateProvider.Logout();
+        navigationManager.NavigateTo("/login");
+    }
+}

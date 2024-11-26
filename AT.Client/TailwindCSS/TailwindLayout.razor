@@ -1,0 +1,54 @@
+﻿@inherits LayoutComponentBase
+@using Blazored.Toast
+@using Blazored.Toast.Configuration
+
+<head>
+    <!-- Chỉ thêm Tailwind CSS tại đây -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="5" IconType="IconType.FontAwesome" ErrorIcon="fa fa-times"
+                InfoIcon="fa fa-info" SuccessIcon="fa fa-check" WarningIcon="fa fa-exclamation" />
+
+<div class="flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="header text-white p-1" style="background-color: #F6F6F6">
+        <div class="container mx-auto flex justify-center items-center">
+            <div class="logo" style="background-color: #F6F6F6">
+                <img width="160" height="55" src="./ATSCADA-digital.gif"
+                     class="header_logo header-logo" alt="ATPro Corp">
+            </div>
+        </div>
+    </header>
+
+    <body class="flex-1 tailwind-specific-styles overflow-y-auto" style="background-color: #F6F6F6">
+        @Body
+    </body>
+
+
+    <!-- Footer -->
+    <footer class="footer text-center text-white py-3" style="background-color: #1E73BE">
+        <div class="container flex justify-center items-center space-x-4">
+            <!-- Icon và số điện thoại -->
+            <div class="item1 item">
+                <a href="tel:+84909883506" rel="nofollow" class="flex items-center">
+                    <img width="20" height="20" src="https://atpro.com.vn/wp-content/uploads/2023/03/call-white.png" alt="hotline" class="mr-2">
+                    +84909883506
+                </a>
+            </div>
+            <!-- Copyright -->
+            <span class="text-center">
+                Copyright © 2024
+                <a href="https://www.atscada.com" target="_blank">
+                    atscada.com
+                </a>
+            </span>
+        </div>
+    </footer>
+</div>
+
+
+@code {
+
+}

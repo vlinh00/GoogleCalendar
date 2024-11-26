@@ -1,0 +1,87 @@
+﻿@using AT.Share.Model
+@using AT.Client.Services.Interface
+@inject IManagerUserService ManagerUserService
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">AT.Client</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Trang chủ
+            </NavLink>
+        </div>
+        @if(staff != null)
+        {
+            if(staff.GroupUserId > 1)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="mytask">
+                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> My Tasks
+                    </NavLink>
+                </div>
+            }
+        }
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="progresses">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Danh mục tiến độ
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="search-order">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Search order
+            </NavLink>
+        </div>
+        @if(staff != null)
+        {
+            if(staff.GroupUserId <= 2)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="manager-user">
+                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Quản lý người dùng
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="manager-task">
+                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Danh mục nhiệm vụ
+                    </NavLink>
+                </div>
+            }
+        }
+        
+    </nav>
+</div>
+
+@code {
+
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private Staff staff = new Staff();
+
+    protected override async Task OnInitializedAsync()
+
+    {
+        await LoadStaffById();
+
+    }
+
+    private async Task LoadStaffById()
+    {
+
+        staff = await ManagerUserService.GetStaffByIdAsync();
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

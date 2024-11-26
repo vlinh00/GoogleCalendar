@@ -1,0 +1,122 @@
+﻿@page "/register"
+@using AT.Share.Model
+@using AT.Client.Services.Interface
+@layout LoginLayout
+@inject NavigationManager navigationManager
+@inject IdentityAuthenticationStateProvider authStateProvider
+@inject IManagerUserService ManagerUserService
+@inject IDepartmentService DepartmentService
+
+<PageTitle>Register</PageTitle>
+<div class="d-flex align-items-center justify-content-center min-vh-100 bg-light px-4">
+    <div class="w-100" style="max-width: 500px;">
+        <div class="bg-primary text-white text-center py-4 rounded-top">
+            <h1 class="h3 font-weight-bold">Đăng Ký Tài Khoản</h1>
+        </div>
+        <div class="p-4 bg-white shadow-lg rounded-bottom">
+            <EditForm OnValidSubmit="OnSubmit" Model="registerParameters">
+                <DataAnnotationsValidator />
+
+                <div class="mb-4">
+                    <label for="inputUsername" class="form-label">Họ tên</label>
+                    <InputText id="inputUsername" class="form-control" @bind-Value="registerParameters.FullName" autofocus placeholder="Nhập họ tên" />
+                </div>
+
+                <div class="mb-4">
+                    <label for="inputUsername" class="form-label">Tài khoản</label>
+                    <InputText id="inputUsername" class="form-control" @bind-Value="registerParameters.UserName" autofocus placeholder="Tài khoản" />
+                    <ValidationMessage For="@(() => registerParameters.UserName)" class="text-danger" />
+                </div>
+
+                <div class="mb-4">
+                    <label for="inputPassword" class="form-label">Mật khẩu</label>
+                    <InputText type="password" id="inputPassword" class="form-control" @bind-Value="registerParameters.Password" placeholder="Mật khẩu" />
+                    <ValidationMessage For="@(() => registerParameters.Password)" class="text-danger" />
+                </div>
+
+                <div class="mb-4">
+                    <label for="inputPasswordConfirm" class="form-label">Nhập lại mật khẩu</label>
+                    <InputText type="password" id="inputPasswordConfirm" class="form-control" @bind-Value="registerParameters.PasswordConfirm" placeholder="Nhập lại mật khẩu" />
+                    <ValidationMessage For="@(() => registerParameters.PasswordConfirm)" class="text-danger" />
+                </div>
+
+                <div class="mb-4">
+                    <label for="description" class="form-label">Phòng ban:</label>
+                    <InputSelect id="description" class="form-control mx-auto" @bind-Value="registerParameters.DepartmentId">
+                        <option value="">Chọn phòng ban</option>
+                        @foreach (var item in departments)
+                        {
+                            <option value="@item.Id">@item.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+
+                <div class="mb-4">
+                    <InputRadioGroup @bind-Value="registerParameters.GroupUserId">
+                        @foreach (var item in groupUsers)
+                        {
+                            <div class="form-check form-check-text">
+                                <InputRadio class="form-check-input" Value="@item.Id" />
+                                <p class="form-check-label">@item.GroupName (@item.Description)</p>
+                                @* <small>@item.Description</small> *@
+                            </div>
+                        }
+                    </InputRadioGroup>
+                </div>
+
+                <div class="mt-4">
+                    <button class="btn btn-primary w-100" type="submit">Tạo tài khoản</button>
+                </div>
+
+                @if (!string.IsNullOrEmpty(error))
+                {
+                    <div class="text-danger text-center mt-3">@error</div>
+                }
+
+                <div class="text-center mt-4">
+                    <NavLink href="login" class="text-primary">Bạn đã có tài khoản? Click tại đây để đăng nhập</NavLink>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    RegisterParameters registerParameters { get; set; } = new RegisterParameters();
+    string error { get; set; }
+
+    private List<Department> departments = new List<Department>();
+    private List<GroupUser> groupUsers = new List<GroupUser>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllGroupUser();
+        await LoadAllDepartment();
+    }
+
+    private async Task LoadAllGroupUser()
+    {
+        groupUsers = await ManagerUserService.GetAllGroupUserAsync();
+    }
+
+    private async Task LoadAllDepartment()
+    {
+        departments = await DepartmentService.GetAllDepartmentAsync();
+    }
+
+    async Task OnSubmit()
+    {
+        error = null;
+        try
+        {
+            await authStateProvider.Register(registerParameters);
+            navigationManager.NavigateTo("");
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+}

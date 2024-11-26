@@ -1,0 +1,194 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.Components.Forms
+@using AT.Client.Services.User;
+@using AT.Share.Model
+@using AT.Client.Services.Interface
+@layout LoginLayout
+@inject NavigationManager navigationManager
+@inject IdentityAuthenticationStateProvider authStateProvider
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime jsRuntime // Thêm IJSRuntime để truy cập JavaScript
+@inject IManagerUserService ManagerUserService
+
+<PageTitle>Login</PageTitle>
+<div class="d-flex align-items-center justify-content-center min-vh-100 bg-light px-4">
+    <div class="w-100" style="max-width: 500px;">
+        <div class="bg-primary text-white text-center py-4 rounded-top">
+            <h1 class="h3 font-weight-bold">Đăng Nhập</h1>
+        </div>
+        <div class="p-4 bg-white shadow-lg rounded-bottom">
+            <EditForm OnValidSubmit="OnSubmit" Model="loginParameters">
+                <DataAnnotationsValidator />
+
+                <div class="mb-4">
+                    <label for="inputUsername" class="form-label">Tài khoản</label>
+                    <InputText id="inputUsername" class="form-control" @bind-Value="loginParameters.UserName" placeholder="Tài khoản" />
+                    <ValidationMessage For="@(() => loginParameters.UserName)" class="text-danger" />
+                </div>
+
+                <div class="mb-4">
+                    <label for="inputPassword" class="form-label">Mật khẩu</label>
+                    <InputText type="password" id="inputPassword" class="form-control" @bind-Value="loginParameters.Password" placeholder="Mật khẩu" />
+                    <ValidationMessage For="@(() => loginParameters.Password)" class="text-danger" />
+                </div>
+
+                <div class="form-check mb-4">
+                    <InputCheckbox id="inputRememberMe" class="form-check-input" @bind-Value="loginParameters.RememberMe" />
+                    <label for="inputRememberMe" class="form-check-label">Nhớ tài khoản và mật khẩu</label>
+                </div>
+
+                <div class="mt-4">
+                    <button class="btn btn-primary w-100" type="submit">Đăng nhập</button>
+                </div>
+
+                @if (!string.IsNullOrEmpty(error))
+                {
+                    <div class="text-danger text-center mt-3">@error</div>
+                }
+
+                <div class="text-center mt-4">
+                    <NavLink href="register" class="text-primary">Đăng ký tài khoản mới</NavLink>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    LoginParameters loginParameters { get; set; } = new LoginParameters();
+
+    string error { get; set; }
+
+    Staff staff = new Staff();
+
+    protected override async Task OnInitializedAsync()
+
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        // Kiểm tra nếu người dùng đã đăng nhập
+        if (user.Identity is { IsAuthenticated: true })
+        {
+            await LoadStaffById();
+            if (staff != null)
+            {
+                if (staff.GroupUserId <= 2)
+                {
+                    navigationManager.NavigateTo("/manager-task");
+                }
+                else
+                {
+                    navigationManager.NavigateTo("/mytask");
+                }
+            }
+        }
+
+        // Khôi phục tên người dùng và mật khẩu từ cookie nếu có
+
+        var userName = await jsRuntime.InvokeAsync<string>("getCookie", "username");
+
+        var password = await jsRuntime.InvokeAsync<string>("getCookie", "password");
+
+
+
+        if (!string.IsNullOrEmpty(userName))
+
+        {
+
+            loginParameters.UserName = userName; // Tự động điền tên người dùng
+
+            loginParameters.RememberMe = true; // Đánh dấu là "Nhớ mật khẩu"
+
+        }
+
+
+
+        if (!string.IsNullOrEmpty(password))
+
+        {
+
+            loginParameters.Password = password; // Tự động điền mật khẩu
+
+        }
+
+
+    }
+
+    private async Task LoadStaffById()
+
+    {
+        staff = await ManagerUserService.GetStaffByIdAsync();
+    }
+
+
+
+    async Task OnSubmit()
+
+    {
+
+        error = null;
+
+        try
+
+        {
+            await authStateProvider.Login(loginParameters);
+
+            // Lấy thông tin người dùng sau khi đăng nhập
+            var authState = await authStateProvider.GetAuthenticationStateAsync();
+
+            // var user = authState.User;
+            // if (user.Identity.IsAuthenticated)
+
+            // {
+
+            //     UserService.UserId = user.FindFirst(c => c.Type == ClaimTypes.NameIdentifier)?.Value; // Lấy UserId
+
+            // }
+
+            // Nếu người dùng chọn "Nhớ tài khoản và mật khẩu", lưu tên đăng nhập và mật khẩu vào cookie
+
+            if (loginParameters.RememberMe)
+
+            {
+
+                await jsRuntime.InvokeVoidAsync("setCookie", "username", loginParameters.UserName, 30); // Cookie sẽ hết hạn sau 30 ngày
+
+                await jsRuntime.InvokeVoidAsync("setCookie", "password", loginParameters.Password, 30); // Cookie sẽ hết hạn sau 30 ngày
+
+            }
+
+            else
+
+            {
+
+                // Nếu không chọn nhớ, xóa cookie
+
+                await jsRuntime.InvokeVoidAsync("deleteCookie", "username");
+
+                await jsRuntime.InvokeVoidAsync("deleteCookie", "password");
+
+            }
+            await LoadStaffById();
+            if(staff != null)
+            {
+                if (staff.GroupUserId <= 2)
+                {
+                    navigationManager.NavigateTo("/manager-task");
+                }
+                else
+                {
+                    navigationManager.NavigateTo("/mytask");
+                }
+            }
+           
+                
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+
+    }
+}

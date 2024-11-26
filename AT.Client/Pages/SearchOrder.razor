@@ -1,0 +1,389 @@
+﻿@page "/search"
+@using AT.Share.Model
+@using AT.Client.TailwindCSS
+@using AT.Client.Services.Interface
+@using Google.Apis.Calendar.v3.Data
+@using Blazored.Toast.Services
+@layout TailwindLayout
+@inject IGoogleCalendarService GoogleCalendarService
+@inject IToastService ToastService
+@inject ISearchOrderService SearchOrderService
+@inject IProgressUpdateService ProgressUpdateService
+@inject IStepModelService StepModelService
+
+
+<PageTitle>Search Order</PageTitle>
+<div class="flex items-center justify-center pb-3" style="background-color: #1E73BE">
+    <h4 class="text-center text-white font-bold mt-3">TRA CỨU ĐƠN HÀNG</h4>
+</div>
+
+
+
+<div class="container flex justify-center mt-3 mb-3" style="max-width: 95%">
+    <form @onsubmit="btnSearchOrder" class="relative flex w-full max-w-lg">
+        <!-- Search Icon -->
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+            <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M15 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+            </svg>
+        </span>
+
+        <!-- Search Input -->
+        <input type="text"
+               placeholder="Nhập mã đơn hàng"
+               class="w-full py-3 pl-12 pr-4 text-sm text-gray-700 border-2 rounded-l-lg rounded-r-lg focus:ring-blue-500 focus:border-blue-500 outline-none"
+               style="border-color: #FF9900"
+               @bind-value="@orderCode"
+               minlength="6"
+               required />
+
+        <!-- Search Button -->
+        <button type="submit"
+                class="text-white absolute right-2 top-1/2 transform -translate-y-1/2 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-800"
+                style="background-color: #FF6600">
+
+            Search
+        </button>
+    </form>
+</div>
+
+<!-- Loader -->
+@if (isLoading)
+{
+    <div class="flex items-center justify-center">
+        <div role="status" class="relative flex items-center justify-center">
+            <!-- SVG loader -->
+            <svg aria-hidden="true" class="w-14 h-14 text-blue-200 animate-spin dark:text-blue-600 fill-blue-500" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor" />
+                <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill" />
+            </svg>
+
+            <!-- Loading text centered over the loader -->
+            <span class="absolute text-blue-500 text-xs">Loading</span>
+        </div>
+    </div>
+}
+
+
+@if (account?.Info != null)
+{
+    @if (account?.Contacts.Count > 0)
+    {
+        <div class="container my-3" style="max-width: 95%">
+            <div class="card">
+                <h2 class= "text-2xl font-semibold border-b p-1 text-center text-white" style="background-color: #1E73BE">Thông Tin Tài Khoản</h2>
+                <div class="card-body text-gray-700" style="background-color: #E0F2F1">
+                    <strong>Mã Tài Khoản:</strong> @account.Info.AccountCode <br />
+                    <strong>Tên Tài Khoản:</strong> @account.Info.AccountName <br />
+                    <strong>Địa Chỉ:</strong> @account.Info.Address <br />
+                    <strong>Số Điện Thoại:</strong> @account.Info.Phone <br />
+                    <strong>Email:</strong> @account.Info.Email <br />
+                    <strong>Ngày Tạo:</strong> @account.Info.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@if (@event != null && !string.IsNullOrEmpty(@event.Summary))
+{
+    int col = 10;
+    DateTime twoPartDate = DateTime.ParseExact(dateTwoPart, "dd/MM/yyyy", null);
+    DateTime qcDate = DateTime.ParseExact(dateQC, "dd/MM/yyyy", null);
+
+    <div class="flex justify-center items-start w-full mx-auto mb-2" style="max-width: 94%">
+
+        <div class="w-full" style="width: @((widthStart_TwoPart*10*col).ToString(" 0.##",System.Globalization.CultureInfo.InvariantCulture))%">
+            <h6 class="text-base font-bold mb-2 @(currentDate.Date >= dateStart.Date? "text-green-600" : "text-gray-300")">@dateStart.ToString("dd/MM/yy")</h6>
+            <div class="flex items-center w-full">
+                <div class="w-8 h-8 border-2 flex items-center justify-center rounded-full @(currentDate.Date >= dateStart.Date? "border-green-500 bg-green-100" : "border-green-300 bg-gray-100")">
+                    @if (currentDate.Date > dateStart.Date)
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-green-500" viewBox="0 0 24 24">
+                            <path d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z"
+                                  data-original="#000000" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <span class="w-3 h-3 bg-gray-500 rounded-full"></span>
+                    }
+
+                </div>
+                <div class="w-full h-1 @(isCompleteTwoPart || currentDate.Date > dateStart.Date ? "bg-green-600" : "bg-gray-300") bg-green-500"></div>
+            </div>
+            <h6 class="text-base font-bold mb-1 @(currentDate.Date >= dateStart.Date? "text-green-600" : "text-gray-300")">Bắt đầu</h6>
+            @if (currentDate.Date == dateStart.Date)
+            {
+                <h6 class="text-base font-bold text-green-600 mb-1 flex flex-wrap justify-start gap-4">Đang lập trình bởi: @assign</h6>
+            }
+        </div>
+
+        @* Now date *@
+        @if (currentDate.Date > dateStart.Date && currentDate.Date < twoPartDate.Date)
+        {
+            var widthStep = (1 - widthStart_TwoPart) * 10 * col;
+
+            <div class="w-full" style="width: @(widthStep.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture))%">
+                <h6 class="text-base font-bold text-green-600 mb-2">@currentDate.ToString("dd/MM/yy")</h6>
+                <div class="flex items-center w-full">
+                    <div class="w-8 h-8 border-2 border-green-500 flex items-center justify-center rounded-full bg-green-100">
+                        @if (isCompletedNow)
+                        {
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-green-500" viewBox="0 0 24 24">
+                                <path d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z"
+                                      data-original="#000000" />
+                            </svg>
+                        }
+                        else
+                        {
+                            <span class="w-3 h-3 bg-gray-500 rounded-full"></span>
+                        }
+                    </div>
+                    <div class="w-full h-1 @(isCompleteTwoPart ? "bg-green-600" : "bg-gray-300")"></div>
+                </div>
+                <h6 class="text-base font-bold text-green-600 mb-1">Đang thực hiện bởi: @assign</h6>
+                @if (isCompletedNow)
+                {
+                    <h6 class="text-base font-bold text-green-600 mb-1 flex flex-wrap justify-start gap-4">Kịp tiến độ</h6>
+                }
+                else
+                {
+                    <h6 class="text-base font-bold text-red-400 mb-1 flex flex-wrap justify-start gap-4">Trễ tiến độ</h6>
+                }
+            </div>
+        }
+
+        <div class="w-full" style="width: @((widthTwoPart_QC*GetQCProgress()*5*col).ToString(" 0.##",System.Globalization.CultureInfo.InvariantCulture))%">
+            <h6 class="text-base font-bold mb-2 @(isCompleteTwoPart ? "text-green-600" : "text-gray-400")">@twoPartDate.ToString("dd/MM/yy")</h6>
+            <div class="flex items-center w-full">
+                <div class="w-8 h-8 border-2 flex items-center justify-center rounded-full @(isCompleteTwoPart ? "border-green-500 bg-green-100" : "border-gray-300 bg-gray-100")">
+
+                    @if (isCompleteTwoPart)
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-green-500" viewBox="0 0 24 24">
+                            <path d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z"
+                                  data-original="#000000" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <span class="w-3 h-3 bg-gray-500 rounded-full"></span>
+                    }
+
+                </div>
+                <div class="w-full h-1 @(isCompleteQC || currentDate.Date > twoPartDate.Date ? "bg-green-600" : "bg-gray-300")"></div> <br />
+            </div>
+            <h6 class="text-base font-bold @(isCompleteTwoPart ? "text-green-600" : "text-gray-400") mb-1">2/3 đơn hàng</h6>
+
+            @if (qcDate.Date == twoPartDate.Date)
+            {
+                <h6 class="text-base font-bold @(isCompleteQC ? "text-green-600" : "text-gray-400") mb-1">QC</h6>
+            }
+
+            @if (currentDate.Date == twoPartDate.Date)
+            {
+                <h6 class="text-base font-bold text-green-600 mb-1 flex flex-wrap justify-start gap-4">Đang thực hiện bởi: @assign</h6>
+            }
+            @if (isOverTime == 1)
+            {
+                <h6 class="text-base font-bold text-red-500 mb-1 flex flex-wrap justify-start gap-4">Tăng ca</h6>
+            }
+            else if (isOverTime == 0 || isCompleteQC == true)
+            {
+                <h6 class="text-base font-bold text-green-600 mb-1 flex flex-wrap justify-start gap-4">Kịp tiến độ</h6>
+            }
+        </div>
+
+        @* Now date *@
+        @if (currentDate.Date > twoPartDate.Date && currentDate.Date < qcDate.Date)
+        {
+            var widthStep = (1 - widthTwoPart_QC) * GetQCProgress() * 5 * col;
+            <div class="w-full" style="width: @(widthStep.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture))%">
+                <h6 class="text-base font-bold text-green-600 mb-2">@DateTime.Now.ToString("dd/MM/yy")</h6>
+                <div class="flex items-center w-full">
+                    <div class="w-8 h-8 border-2 border-green-500 flex items-center justify-center rounded-full bg-green-100">
+                        @if (isCompletedNow)
+                        {
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-green-500" viewBox="0 0 24 24">
+                                <path d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z"
+                                      data-original="#000000" />
+                            </svg>
+                        }
+                        else
+                        {
+                            <span class="w-3 h-3 bg-gray-500 rounded-full"></span>
+                        }
+                    </div>
+                    <div class="w-full h-1 @(isCompleteQC ? "bg-green-600" : "bg-gray-300")"></div>
+                </div>
+                <h6 class="text-base font-bold text-green-600 mb-1">Đang thực hiện bởi: @assign</h6>
+                @if (isCompletedNow)
+                {
+                    <h6 class="text-base font-bold text-green-600 mb-1 flex flex-wrap justify-start gap-4">Kịp tiến độ</h6>
+                }
+                else
+                {
+                    <h6 class="text-base font-bold text-red-400 mb-1 flex flex-wrap justify-start gap-4">Trễ tiến độ</h6>
+                }
+            </div>
+        }
+
+        @if (qcDate.Date > twoPartDate.Date && qcDate.Date < dueDate.Date)
+        {
+            var widthQC = GetQCProgress();
+            <div class="w-full" style="width: @((widthQC_due*(1-widthQC)*5*col).ToString(" 0.##",System.Globalization.CultureInfo.InvariantCulture))%">
+                <h6 class="text-base font-bold mb-2 @(isCompleteQC ? "text-green-600":"text-gray-400")">@qcDate.ToString("dd/MM/yy")</h6>
+                <div class="flex items-center w-full">
+                    <div class="w-8 h-8 border-2 flex items-center justify-center rounded-full @(isCompleteQC ? "border-green-500 bg-green-100" : "border-gray-300 bg-gray-100")">
+                        @* <span class="w-3 h-3 bg-green-500 rounded-full"></span> *@
+                        @if (isCompleteQC)
+                        {
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-green-500" viewBox="0 0 24 24">
+                                <path d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z"
+                                      data-original="#000000" />
+                            </svg>
+                        }
+                        else
+                        {
+                            <span class="w-3 h-3 bg-gray-500 rounded-full"></span>
+                        }
+
+                    </div>
+                    <div class="w-full h-1 @(isCompleteDone || currentDate.Date > qcDate.Date ? "bg-green-600" : "bg-gray-300")"></div>
+                </div>
+                <h6 class="text-base font-bold mb-1 @(isCompleteQC ? "text-green-600":"text-gray-400")">QC</h6>
+                @if (currentDate.Date == qcDate.Date)
+                {
+                    <h6 class="text-base font-bold text-green-600 mb-1 flex flex-wrap justify-start gap-4">Đang thực hiện bởi: @assign</h6>
+                }
+            </div>
+        }
+        @* Now date *@
+        @if (currentDate.Date > qcDate.Date && currentDate.Date < dueDate.Date)
+        {
+            var widthQC = GetQCProgress();
+            var widthStep = (1 - widthQC_due) * widthQC * 5 * col;
+            <div class="w-full" style="width: @(widthStep.ToString(" 0.##",System.Globalization.CultureInfo.InvariantCulture))%">
+                <h6 class="text-base font-bold text-green-600 mb-2">@currentDate.ToString("dd/MM/yy")</h6>
+                <div class="flex items-center w-full">
+                    <div class="w-8 h-8 border-2 border-green-500 flex items-center justify-center rounded-full bg-green-100">
+                        @if (isCompletedNow)
+                        {
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-green-500" viewBox="0 0 24 24">
+                                <path d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z"
+                                      data-original="#000000" />
+                            </svg>
+                        }
+                        else
+                        {
+                            <span class="w-3 h-3 bg-gray-500 rounded-full"></span>
+                        }
+                    </div>
+                    <div class="w-full h-1 @(isCompleteDone ? "bg-green-600" : "bg-gray-300")"></div>
+                </div>
+                <h6 class="text-base font-bold text-green-600 mb-1">Đang thực hiện bởi: @assign</h6>
+                @if (isCompletedNow)
+                {
+                    <h6 class="text-base font-bold text-green-600 mb-1 flex flex-wrap justify-start gap-4">Kịp tiến độ</h6>
+                }
+                else
+                {
+                    <h6 class="text-base font-bold text-red-400 mb-1 flex flex-wrap justify-start gap-4">Trễ tiến độ</h6>
+                }
+            </div>
+        }
+        <div class="w-1/8">
+            <h6 class="text-base font-bold mb-2 @(isCompleteDone ? "text-green-600" : "text-gray-400")">@dueDate.ToString("dd/MM/yy")</h6>
+            <div class="flex items-center">
+                <div class="flex items-center w-full">
+                    <div class="w-8 h-8 border-2 flex items-center justify-center rounded-full @(isCompleteDone ? "border-green-500 bg-green-100" : "border-gray-300 bg-gray-100")">
+                        @if (isCompleteDone)
+                        {
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-green-500" viewBox="0 0 24 24">
+                                <path d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z"
+                                      data-original="#000000" />
+                            </svg>
+                        }
+                        else
+                        {
+                            <span class="w-3 h-3 bg-gray-500 rounded-full"></span>
+                        }
+
+                    </div>
+                    @if (currentDate.Date > dueDate.Date && isCompleteDone == false)
+                    {
+                        <div class="w-full h-1 bg-red-300"></div>
+                    }
+                </div>
+            </div>
+            <h6 class="text-base font-bold mb-1 @(isCompleteDone ? "text-green-600" : "text-gray-400")">Kết thúc</h6>
+            @if (currentDate.Date == dueDate.Date)
+            {
+                <h6 class="text-base font-bold text-green-500 mb-1 flex flex-wrap justify-start gap-4">Đang thực hiện bởi: @assign</h6>
+            }
+        </div>
+
+        @if (currentDate.Date > dueDate.Date && isCompleteDone == false)
+        {
+            <div class="w-1/12">
+                <h6 class="text-base font-bold mb-2 @(isCompleteDone ? "text-green-600" : "text-red-400")">@currentDate.ToString("dd/MM/yy")</h6>
+                <div class="flex items-center">
+                    <div class="flex items-center w-full">
+                        <div class="w-8 h-8 border-2 flex items-center justify-center rounded-full @(isCompleteDone ? "border-green-500 bg-green-100" : "border-gray-300 bg-gray-100")">
+                            @if (isCompleteDone)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-green-500" viewBox="0 0 24 24">
+                                    <path d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z"
+                                          data-original="#000000" />
+                                </svg>
+                            }
+                            else
+                            {
+                                <span class="w-3 h-3 bg-gray-500 rounded-full"></span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <h6 class="text-base font-bold mb-1 @(isCompleteDone ? "text-green-600" : "text-red-400")">Trễ hạn</h6>
+                @if (currentDate.Date > dueDate.Date)
+                {
+                    <h6 class="text-base font-bold mb-1 flex flex-wrap justify-start gap-4 @(isCompleteDone ? "text-green-600" : "text-red-400")">Đang thực hiện bởi: @assign</h6>
+                }
+            </div>
+        }
+    </div>
+
+    string[] parts = @event.Summary.Split("_");
+    parts[0] = parts[0].Trim();
+    <div class="container my-3" style="max-width: 95%">
+        <div class="card">
+            <h2 class="text-2xl font-semibold text-center p-1 border-b text-white" style="background-color: #1E73BE">Tiến Độ Đơn Hàng</h2>
+            <div class="card-body text-gray-700" style="background-color: #E0F2F1">
+                <strong>Mã Đơn Hàng:</strong> @parts[0] <br />
+                <strong>Bắt Đầu:</strong> @dateStart.ToString("yyyy-MM-dd HH:mm") <br />
+                <strong>Kết Thúc:</strong> @dueDate.ToString("yyyy-MM-dd HH:mm") <br />
+                <strong>Tiến Độ:</strong>
+                @if (descriptions.Count > 0)
+                {
+                    @foreach (var description in descriptions)
+                    {
+                        <li>@description.Description (Cập nhật ngày: @((description.Timestamp.HasValue) ? description.Timestamp.Value.ToString("dd/MM/yyyy HH:mm") : "")) </li>
+                    }
+                }
+                else
+                {
+                    <br />
+                }
+                <strong>Người thực hiện:</strong> @assign
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+
+}
+
+

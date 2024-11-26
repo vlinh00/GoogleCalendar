@@ -1,0 +1,96 @@
+﻿@page "/"
+@attribute [Authorize]
+@using AT.Client.Services.Interface
+@using AT.Share.Model
+@using Google.Apis.Calendar.v3.Data
+@inject IGoogleCalendarService GoogleCalendarService
+@inject IManagerUserService ManagerUserService
+
+<h3>Upcoming Events</h3>
+<ul>
+    @if (staff != null)
+    {
+        @if (staff.GroupUserId > 1)
+        {
+            @* @if (@events != null)
+    {
+    <h5>@events.Summary</h5>
+    foreach (var eventItem in @events.Items)
+    {
+    <li>@eventItem.Summary - @eventItem.Start.DateTime - @eventItem.End.DateTime - @eventItem.Location</li>
+    }
+
+    } *@
+            @if (@events != null)
+            {
+                <h5>@events.Summary</h5>
+                <div class="row">
+                    @foreach (var eventItem in @events.Items)
+                    {
+                        @* string[] @parts = @eventItem.Summary.Split("-");
+                        for(int i = 0; i < @parts.Length; i++)
+                        {
+                            parts[i] = parts[i].Trim();
+                        } *@
+                        <div class="col-md-4 mb-4">
+                            <div class="card bg-success text-white h-100">
+                                <!-- Đổi màu bằng bg-info và text-white -->
+                                @* <div class="card-header">@parts[0]</div> *@
+                                <div class="card-body">
+                                    <h5 class="card-title">@eventItem.Summary</h5>
+                                    <p class="card-text">
+                                        <strong>Start:</strong> @eventItem.Start.DateTime?.ToString("yyyy-MM-dd HH:mm") <br />
+                                        <strong>End:</strong> @eventItem.End.DateTime?.ToString("yyyy-MM-dd HH:mm") <br />
+                                        <strong>Description:</strong> @eventItem.Description <br />
+                                        <strong>Location:</strong> @eventItem.Location
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+        }
+        else
+        {
+            @if (@listEvents.Count > 0)
+            {
+                foreach (var lstevents in listEvents)
+                {
+                    <h5>@lstevents.Summary</h5>
+                    foreach (var eventItem in @lstevents.Items)
+                    {
+                        <li>@eventItem.Summary - @eventItem.Start.DateTime - @eventItem.End.DateTime - @eventItem.Location</li>
+                    }
+                }
+            }
+        }
+    }
+    @* else
+    {
+    <p>No upcoming events or loading failed.</p>
+    } *@
+
+
+</ul>
+
+@code {
+    private Events events = new Events();
+    private Staff staff = new Staff();
+    private List<Events> listEvents = new List<Events>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStaffInfoById();
+        if (staff.GroupUserId > 1)
+            events = await GoogleCalendarService.GetAllEventsAsync();
+        else
+            listEvents = await GoogleCalendarService.GetListAllEventsAsync();
+    }
+    private async Task LoadStaffInfoById()
+    {
+        staff = await ManagerUserService.GetStaffByIdAsync();
+    }
+
+}

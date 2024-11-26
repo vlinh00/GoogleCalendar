@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AT.Client", "AT.Client\AT.Client.csproj", "{EC3FB47A-411D-4527-80FF-86BC30C78122}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AT.Server", "AT.Server\AT.Server.csproj", "{3CAA4F4B-A838-45B8-BDBF-AB4B7DB9EDCA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AT.Share", "AT.Share\AT.Share.csproj", "{048EC126-C354-49C6-90D7-1FA93DC9ADAE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EC3FB47A-411D-4527-80FF-86BC30C78122}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC3FB47A-411D-4527-80FF-86BC30C78122}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC3FB47A-411D-4527-80FF-86BC30C78122}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC3FB47A-411D-4527-80FF-86BC30C78122}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3CAA4F4B-A838-45B8-BDBF-AB4B7DB9EDCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3CAA4F4B-A838-45B8-BDBF-AB4B7DB9EDCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3CAA4F4B-A838-45B8-BDBF-AB4B7DB9EDCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3CAA4F4B-A838-45B8-BDBF-AB4B7DB9EDCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{048EC126-C354-49C6-90D7-1FA93DC9ADAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{048EC126-C354-49C6-90D7-1FA93DC9ADAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{048EC126-C354-49C6-90D7-1FA93DC9ADAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{048EC126-C354-49C6-90D7-1FA93DC9ADAE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5EB592A3-D604-440A-A660-E405813EF7D0}
+	EndGlobalSection
+EndGlobal
